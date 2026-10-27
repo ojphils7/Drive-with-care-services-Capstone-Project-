@@ -1,0 +1,1722 @@
+{
+  "name": "Lovable integration",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "1815ab72-9f44-44e7-a433-585bd2d32846",
+              "leftValue": "={{ $('sentiment & severity scoring').item.json.output[0].content[0].text.needs_human_review }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "10673f90-e8f4-45be-afb3-954f416a7f79",
+              "leftValue": "={{ $json.output[0].content[0].text.confidence }}",
+              "rightValue": 0.5,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -880,
+        -48
+      ],
+      "id": "3f9a0ec4-c306-44e1-9d73-f66b99268168",
+      "name": "confidence gate"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "20e3ac60-1db9-48eb-b0aa-78cf7d48ba58",
+              "name": "output[0].content[0].text.sentiment_score",
+              "value": "={{ $json.output[0].content[0].text.sentiment_score }}",
+              "type": "number"
+            },
+            {
+              "id": "ad648a67-4a8a-4ef4-8367-7c4ca39e4613",
+              "name": "output[0].content[0].text.severity",
+              "value": "={{ $json.output[0].content[0].text.severity }}",
+              "type": "string"
+            },
+            {
+              "id": "8fd12e1b-d5c5-45e5-9c3f-404e717e832c",
+              "name": "output[0].content[0].text.confidence",
+              "value": "={{ $json.output[0].content[0].text.confidence }}",
+              "type": "number"
+            },
+            {
+              "id": "cf55cd54-568b-4a67-9a82-c37996d9469b",
+              "name": "output[0].content[0].text.reasoning",
+              "value": "={{ $json.output[0].content[0].text.reasoning }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -1104,
+        -48
+      ],
+      "id": "5ea8929e-c3ec-4f40-bd49-7695468ec344",
+      "name": "parse the AI output"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are an expert customer experience analyst for an auto repair chain. You have access to a Gmail tool to send emails directly to customers.\n\nYour task is to analyze customer feedback and, if the situation is critical, send an immediate acknowledgement email.\n\nSTRICT RULES FOR ESCALATION (needs_human_review):\nYou MUST set \"needs_human_review\" to TRUE and use the Gmail tool if the feedback contains any of the following:\n1. Legal threats, mentions of lawyers, or lawsuits.\n2. Safety hazards (e.g., brakes failed, steering issues, risk of injury).\n3. Extreme profanity, abuse, or harassment towards staff.\n4. The text is too short, vague, or incoherent to understand the actual issue.\n5. The customer demands immediate human contact (e.g., \"Call me now\", \"I want to speak to the CEO\").\n\nINSTRUCTIONS FOR SENDING EMAIL (Using Gmail Tool):\nIf \"needs_human_review\" is TRUE, you must use the Gmail tool to send an email.\n- Recipient: Extract the customer's email address from the input data (look for the \"email\" field).\n- Subject: \"Urgent: We have received your feedback\"\n- Body Tone: Professional, empathetic, and apologetic.\n- Body Content: \n  1. Acknowledge their specific complaint briefly.\n  2. Apologize for the negative experience.\n  3. Explicitly state: \"Your complaint has been escalated to our human specialist team who will review this personally and attend to it immediately.\"\n  4. Do NOT promise refunds or specific fixes.\n\nIf \"needs_human_review\" is FALSE (standard complaints, praise, or mild frustration), do NOT send an email.\n\nFINAL OUTPUT:\nAfter completing your analysis and sending the email (if required), return ONLY valid JSON with exactly these keys. Do not include markdown or code fences.\n\n{\n  \"sentiment_score\": number from -1 to 1,\n  \"severity\": \"low\" | \"medium\" | \"high\",\n  \"confidence\": number from 0 to 1,\n  \"reasoning\": \"string explaining your analysis\",\n  \"email_address_used\": \"the email address you sent the mail to (or null if none)\",\n  \"needs_human_review\": boolean\n}"
+            },
+            {
+              "content": "=Please analyze the following customer feedback:\n\nCustomer Name: {{ $json.body.customer_name }}\nThe Complaint: {{ $json.body.complaint }}\n\nReturn the JSON object now."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "textFormat": {
+            "textOptions": {
+              "type": "json_object"
+            }
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        -1472,
+        -48
+      ],
+      "id": "09346d2b-9c77-4a85-821b-1f673cad4478",
+      "name": "sentiment & severity scoring",
+      "credentials": {
+        "openAiApi": {
+          "id": "l9TLLr3FtdAvgsZz",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "51cf9c64-d4d0-4931-91dd-8cd387c99fcc",
+              "leftValue": "={{ $json.body.complaint.length }}",
+              "rightValue": 3,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1728,
+        -32
+      ],
+      "id": "5acc891d-56e2-4038-a31d-6b7fa43daf9c",
+      "name": "guard against empty/junk submissions"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e2531192-7a08-4e69-a3d5-d22a25e2c07b",
+              "name": "body.feedback_id",
+              "value": "={{ $json.body.feedback_id }}",
+              "type": "string"
+            },
+            {
+              "id": "957e1f71-adf7-490c-a856-650c889d2d28",
+              "name": "body.customer_name",
+              "value": "={{ $json.body.customer_name }}",
+              "type": "string"
+            },
+            {
+              "id": "d561757d-36b7-4142-aa9b-2d7c31d1742d",
+              "name": "body.email",
+              "value": "={{ $json.body.email }}",
+              "type": "string"
+            },
+            {
+              "id": "a738fb71-bd23-4f45-aab4-3182f63bd080",
+              "name": "body.phone",
+              "value": "={{ $json.body.phone }}",
+              "type": "string"
+            },
+            {
+              "id": "2c20bd1c-0930-4def-9286-bc6a37f57391",
+              "name": "body.location",
+              "value": "={{ $json.body.location }}",
+              "type": "string"
+            },
+            {
+              "id": "9df95302-3879-47f9-ac32-5d3a204a6853",
+              "name": "body.vehicle_make",
+              "value": "={{ $json.body.vehicle_make }}",
+              "type": "string"
+            },
+            {
+              "id": "dc701d8a-05d0-4f50-a1c3-6017e1c4bc64",
+              "name": "body.vehicle_model",
+              "value": "={{ $json.body.vehicle_model }}",
+              "type": "string"
+            },
+            {
+              "id": "9f2870e1-2f2f-491e-abc6-2e396d4d4826",
+              "name": "body.vehicle",
+              "value": "={{ $json.body.vehicle }}",
+              "type": "string"
+            },
+            {
+              "id": "c1566ef5-d4e3-4bf8-b813-294a2887458f",
+              "name": "body.service_received",
+              "value": "={{ $json.body.service_received }}",
+              "type": "string"
+            },
+            {
+              "id": "181ff406-6444-45ab-87f9-a63f112a69a9",
+              "name": "body.service_date",
+              "value": "={{ $json.body.service_date }}",
+              "type": "string"
+            },
+            {
+              "id": "f2892fdb-949f-460f-bcfa-93cc380baebf",
+              "name": "body.rating_label",
+              "value": "={{ $json.body.rating_label }}",
+              "type": "string"
+            },
+            {
+              "id": "1a2ebc12-def5-4792-834a-e36ce734d44f",
+              "name": "body.complaint",
+              "value": "={{ $json.body.complaint }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -1952,
+        -32
+      ],
+      "id": "92c9d93b-b1b2-406a-9791-8aacddab2f34",
+      "name": "node — normalize"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "feedback-form",
+        "options": {
+          "responseData": "{\"status\":\"received\"}"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -2176,
+        -32
+      ],
+      "id": "b4b93c99-b1c8-40fb-bc3a-13b51092df1e",
+      "name": "Webhook/changes the flow from the webpage",
+      "webhookId": "84aee9f2-d191-403e-8ef7-ba4176d07ef8"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1W6XJiHrhdKyDum6F7ZPuU6-n--gDRuYbuGvumv5w-hY",
+          "mode": "list",
+          "cachedResultName": "history lookup",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1W6XJiHrhdKyDum6F7ZPuU6-n--gDRuYbuGvumv5w-hY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1W6XJiHrhdKyDum6F7ZPuU6-n--gDRuYbuGvumv5w-hY/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "location": "={{ $json.body.location }}",
+            "feedback_text": "={{ \"Customer Emotion: \" + $('Webhook/changes the flow from the webpage').item.json.body.feedback_emotion + \"\\nCustomer Complaint: \" + $json.body.complaint }}",
+            "feedback_id": "={{ $('Webhook/changes the flow from the webpage').item.json.body.feedback_id }}",
+            "customer_name": "={{ $('Webhook/changes the flow from the webpage').item.json.body.customer_name }}",
+            "customer_email": "={{ $('Webhook/changes the flow from the webpage').item.json.body.email }}",
+            "status": "closed"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "feedback_id",
+              "displayName": "feedback_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "customer_name",
+              "displayName": "customer_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "customer_email",
+              "displayName": "customer_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "location",
+              "displayName": "location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "feedback_text",
+              "displayName": "feedback_text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "received_at",
+              "displayName": "received_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sentiment_score",
+              "displayName": "sentiment_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sevrity",
+              "displayName": "sevrity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "confidence",
+              "displayName": "confidence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "reasoning",
+              "displayName": "reasoning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "route",
+              "displayName": "route",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "draft_response",
+              "displayName": "draft_response",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "alert_sent",
+              "displayName": "alert_sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -1504,
+        528
+      ],
+      "id": "9988169f-e190-43d0-a1cd-056d3cec06a5",
+      "name": "Log Discarded Feedback",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "BtGFegRHJl07ZK7W",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1W6XJiHrhdKyDum6F7ZPuU6-n--gDRuYbuGvumv5w-hY",
+          "mode": "list",
+          "cachedResultName": "Drivecare Service",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1W6XJiHrhdKyDum6F7ZPuU6-n--gDRuYbuGvumv5w-hY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 535869719,
+          "mode": "list",
+          "cachedResultName": "Log need human",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1W6XJiHrhdKyDum6F7ZPuU6-n--gDRuYbuGvumv5w-hY/edit#gid=535869719"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "severity": "={{ $json.output[0].content[0].text.severity }}",
+            "confidence": "={{ $json.output[0].content[0].text.confidence }}",
+            "feedback": "={{ $json.output[0].content[0].text.reasoning }}",
+            "customer name": "={{ $('node — normalize').item.json.body.customer_name }}",
+            "email": "={{ $('node — normalize').item.json.body.email }}",
+            "location": "={{ $('node — normalize').item.json.body.location }}",
+            "sentiment_score": "={{ $('sentiment & severity scoring').item.json.output[0].content[0].text.sentiment_score }}",
+            "reasoning": "={{ $('sentiment & severity scoring').item.json.output[0].content[0].text.reasoning }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "customer name",
+              "displayName": "customer name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "location",
+              "displayName": "location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "feedback",
+              "displayName": "feedback",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sentiment_score",
+              "displayName": "sentiment_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "severity",
+              "displayName": "severity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "confidence",
+              "displayName": "confidence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "reasoning",
+              "displayName": "reasoning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "needs_human_review",
+              "displayName": "needs_human_review",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "received",
+              "displayName": "received",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -608,
+        -336
+      ],
+      "id": "6fe6c74e-76c5-4f7e-988b-30fa09f5620d",
+      "name": "Log need human",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "BtGFegRHJl07ZK7W",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "joeyinsss@gmail.com",
+        "subject": "=Feedback needs human review -  {{ $('node — normalize').item.json.body.location }}",
+        "emailType": "text",
+        "message": "=Dear Team,\nI am escalating the following customer feedback for your urgent review. The customer has expressed severe concerns that need to be addressed promptly.\n\nName: {{ $json['customer name'] }}\n\nLocation: {{ $('node — normalize').item.json.body.location }}\n\nEmail: {{ $json.email }}\n\nFeedback:{{ $json.feedback }}\n\nRegards.",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -368,
+        -336
+      ],
+      "id": "638b4ad0-5209-4622-8cf1-bec23747962d",
+      "name": "Human review notification",
+      "webhookId": "74e74601-97ff-4e89-9e61-217221a4f2ac",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "if6qYvsz8Nfgv1FD",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Get ALL historical rows from the Google Sheets lookup node.\n// We use .all() to check the history, but we DO NOT pass this array forward.\nconst historyRows = $('HistoryCheck').all();\n\n// 2. Get ONLY the current, new submission data.\n// .first() is the magic command here. It ensures we only grab 1 item, \n// preventing any duplicate loops downstream.\nconst currentAI = $('parse the AI output').first().json;\nconst currentNormalized = $('node — normalize').first().json;\n\n// 3. Evaluate if there is ANY previous negative feedback in the history.\n// If historyRows is empty (new customer), this safely evaluates to false.\nconst isRepeatNegative = historyRows.some(item => {\n  const score = Number(item.json.sentiment_score);\n  return Number.isFinite(score) && score < 0;\n});\n\n// 4. Return EXACTLY ONE item. \n// This is the most important part to prevent double emails to staff/customers.\n// Downstream nodes (Switch, Gmail, Sheets) will only see this single merged object.\nreturn [{\n  json: {\n    // Flatten the normalized data (removes the 'body' wrapper if it exists)\n    ...(currentNormalized.body || currentNormalized),\n    \n    // Add the AI analysis data (sentiment_score, severity, etc.)\n    ...currentAI,\n    \n    // Add our custom boolean flag for the Switch node routing\n    is_repeat_negative: isRepeatNegative\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -416,
+        -32
+      ],
+      "id": "38735f6e-bb1c-4827-b248-1c18122a88b9",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.sentiment_score }}",
+                    "rightValue": 0,
+                    "operator": {
+                      "type": "number",
+                      "operation": "gte"
+                    },
+                    "id": "84e62448-d83b-4475-a709-e29b543151a0"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "log positive"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "f87d8533-d9ac-479b-ace2-3c7975d21fbd",
+                    "leftValue": "={{ (Number($json.sentiment_score) < -0.3) || ($json.is_repeat_negative === true) }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "severe_or_repeat_negative"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "Mild Negative"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        16,
+        -48
+      ],
+      "id": "b321f3f0-e701-4875-aab4-69d553b1288b",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1W6XJiHrhdKyDum6F7ZPuU6-n--gDRuYbuGvumv5w-hY",
+          "mode": "list",
+          "cachedResultName": "Drivecare Service",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1W6XJiHrhdKyDum6F7ZPuU6-n--gDRuYbuGvumv5w-hY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 688464357,
+          "mode": "list",
+          "cachedResultName": "Log positive",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1W6XJiHrhdKyDum6F7ZPuU6-n--gDRuYbuGvumv5w-hY/edit#gid=688464357"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "customer name": "={{ $('node — normalize').item.json.body.customer_name }}",
+            "email": "={{ $('node — normalize').item.json.body.email }}",
+            "location": "={{ $('node — normalize').item.json.body.location }}",
+            "feedback": "={{ $('node — normalize').item.json.body.complaint }}",
+            "severity": "={{ $('sentiment & severity scoring').item.json.output[0].content[0].text.severity }}",
+            "confidence": "={{ $('sentiment & severity scoring').item.json.output[0].content[0].text.confidence }}",
+            "reasoning": "={{ $('sentiment & severity scoring').item.json.output[0].content[0].text.reasoning }}",
+            "route": "ready_to_post",
+            "status": "open",
+            "sentiment_score": "={{ $json.sentiment_score }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "customer name",
+              "displayName": "customer name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "location",
+              "displayName": "location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "feedback",
+              "displayName": "feedback",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sentiment_score",
+              "displayName": "sentiment_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "severity",
+              "displayName": "severity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "confidence",
+              "displayName": "confidence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "reasoning",
+              "displayName": "reasoning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "route",
+              "displayName": "route",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        496,
+        -384
+      ],
+      "id": "64694dfd-f3a8-468e-bd90-699211914991",
+      "name": "Log positive",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "BtGFegRHJl07ZK7W",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "GPT-4O"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=Draft a professional, empathetic, and concise email response to the customer feedback provided below. \n\nCRITICAL INSTRUCTIONS - YOU MUST STRICTLY FOLLOW THESE RULES:\n1. Don't invent anything. Only acknowledge the facts provided in the complaint.\n2. Don't promise refunds, discounts, or any form of compensation.\n3. Don't invent dates or timeframes (e.g., do not say \"we will call you tomorrow\" or \"within 24 hours\").\n4. Don't promise specific actions or fixes (e.g., do not say \"we will replace the part\" or \"we will fix the issue\").\n5. Don't make up names of staff or managers. Sign off simply as \"The Management Team\".\n\nYour only goal is to acknowledge their frustration, thank them for bringing this to our attention, and state that their feedback is being reviewed.\n\nHere is the customer data:\n- Customer Name: {{ $json.customer_name }}\n- The Complaint: {{ $json.complaint }}\n- Sentiment Score: {{ $json.output[0].content[0].text.sentiment_score }}\n- Severity Level: {{ $json.output[0].content[0].text.severity }}\n- email: {{ $json.email }}\n\nWrite the email response now.\n\ncustomer_email: {{ $json.email }}\n"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        480,
+        -32
+      ],
+      "id": "bace7c66-7bcc-43fe-a27c-c07b61798f61",
+      "name": "OpenAI - Severe/Repeat Draft",
+      "credentials": {
+        "openAiApi": {
+          "id": "l9TLLr3FtdAvgsZz",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "joebiosure@gmail.com",
+        "subject": "=URGENT customer feedback -  {{ $('node — normalize').item.json.body.location }}",
+        "emailType": "text",
+        "message": "=A high-severity or repeat-negative feedback requires attention.  \n\nCustomer: {{ $('node — normalize').item.json.body.customer_name }}\n\nEmail: {{ $('node — normalize').item.json.body.email }}\n\nLocation: {{ $('node — normalize').item.json.body.location }}\n\nSeverity:  {{ $('sentiment & severity scoring').item.json.output[0].content[0].text.severity }}\n\nFeedback:  {{ $('node — normalize').item.json.body.complaint }}\n\nThe service was terrible... ",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        -32
+      ],
+      "id": "beee6975-991e-4042-8128-a2fa4bc5a752",
+      "name": "Send a message",
+      "webhookId": "ed678f92-cc33-45a9-99e5-830a21a2b5ac",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "if6qYvsz8Nfgv1FD",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "GPT-4O"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=Please draft a polite response for the following customer:\n\nCustomer Name: {{ $json.customer_name }}\nThe Complaint: {{ $json.complaint }}\n\nWrite the email response now."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        368,
+        464
+      ],
+      "id": "644f8517-05a7-4e4c-a688-647b83faafd3",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "l9TLLr3FtdAvgsZz",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1W6XJiHrhdKyDum6F7ZPuU6-n--gDRuYbuGvumv5w-hY",
+          "mode": "list",
+          "cachedResultName": "Drivecare Service",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1W6XJiHrhdKyDum6F7ZPuU6-n--gDRuYbuGvumv5w-hY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 334460268,
+          "mode": "list",
+          "cachedResultName": "Log private queue/draft response",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1W6XJiHrhdKyDum6F7ZPuU6-n--gDRuYbuGvumv5w-hY/edit#gid=334460268"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "customer_name": "={{ $('node — normalize').item.json.body.customer_name }}",
+            "email": "={{ $('node — normalize').item.json.body.email }}",
+            "complaint": "={{ $('node — normalize').item.json.body.complaint }}",
+            "status": "pending_review"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "customer_name",
+              "displayName": "customer_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "complaint",
+              "displayName": "complaint",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ai_draft_response",
+              "displayName": "ai_draft_response",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        784,
+        464
+      ],
+      "id": "c84fc5e9-7708-42f6-a590-12b0d9e4fec2",
+      "name": "Log private queue/draft response",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "BtGFegRHJl07ZK7W",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1W6XJiHrhdKyDum6F7ZPuU6-n--gDRuYbuGvumv5w-hY",
+          "mode": "list",
+          "cachedResultName": "Drivecare Service",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1W6XJiHrhdKyDum6F7ZPuU6-n--gDRuYbuGvumv5w-hY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2035325609,
+          "mode": "list",
+          "cachedResultName": "Master Feedback",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1W6XJiHrhdKyDum6F7ZPuU6-n--gDRuYbuGvumv5w-hY/edit#gid=2035325609"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "email",
+              "lookupValue": "={{ $('node — normalize').item.json.body.email }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -672,
+        -32
+      ],
+      "id": "685e25c8-609a-4131-b61b-0cbe8343f1f3",
+      "name": "HistoryCheck",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "BtGFegRHJl07ZK7W",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('To', ``, 'string') }}",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "emailType": "text",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        624,
+        128
+      ],
+      "id": "383b66f9-d9f0-4fe0-a00b-66d662f062fa",
+      "name": "Send a message in Gmail",
+      "webhookId": "ee75809b-d2bf-470f-9f3e-9b7a3351b7ae",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "if6qYvsz8Nfgv1FD",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1W6XJiHrhdKyDum6F7ZPuU6-n--gDRuYbuGvumv5w-hY",
+          "mode": "list",
+          "cachedResultName": "Drivecare Service",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1W6XJiHrhdKyDum6F7ZPuU6-n--gDRuYbuGvumv5w-hY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 96141383,
+          "mode": "list",
+          "cachedResultName": "Log manager alert",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1W6XJiHrhdKyDum6F7ZPuU6-n--gDRuYbuGvumv5w-hY/edit#gid=96141383"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "customer_name": "={{ $('node — normalize').item.json.body.customer_name }}",
+            "email": "={{ $('node — normalize').item.json.body.email }}",
+            "complaint": "={{ $('node — normalize').item.json.body.complaint }}",
+            "sentiment_score": "={{ $('sentiment & severity scoring').item.json.output[0].content[0].text.sentiment_score }}",
+            "severity": "={{ $('sentiment & severity scoring').item.json.output[0].content[0].text.severity }}",
+            "route": "manager_alert",
+            "alert_sent": "true",
+            "status": "open",
+            "draft_response": "={{ $('OpenAI - Severe/Repeat Draft').item.json.output[0].content[0].text }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "customer_name",
+              "displayName": "customer_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "complaint",
+              "displayName": "complaint",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sentiment_score",
+              "displayName": "sentiment_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "severity",
+              "displayName": "severity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "draft_response",
+              "displayName": "draft_response",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "alert_sent",
+              "displayName": "alert_sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "route",
+              "displayName": "route",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1168,
+        -32
+      ],
+      "id": "180a58e6-39ea-4690-8b17-029de4d7769f",
+      "name": "Log manager alert",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "BtGFegRHJl07ZK7W",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1W6XJiHrhdKyDum6F7ZPuU6-n--gDRuYbuGvumv5w-hY",
+          "mode": "list",
+          "cachedResultName": "Drivecare Service",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1W6XJiHrhdKyDum6F7ZPuU6-n--gDRuYbuGvumv5w-hY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2035325609,
+          "mode": "list",
+          "cachedResultName": "Master Feedback",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1W6XJiHrhdKyDum6F7ZPuU6-n--gDRuYbuGvumv5w-hY/edit#gid=2035325609"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $now }}",
+            "customer_name": "={{ $json.customer_name }}",
+            "email": "={{ $json.email }}",
+            "location": "={{ $json.location }}",
+            "complaint": "={{ $json.complaint }}",
+            "sentiment_score": "={{ $json.output[0].content[0].text.sentiment_score }}",
+            "severity": "={{ $json.output[0].content[0].text.severity }}",
+            "reasoning": "={{ $json.output[0].content[0].text.reasoning }}",
+            "confidence": "={{ $json.output[0].content[0].text.confidence }}",
+            "is_repeat_negative": "={{ $json.is_repeat_negative }}",
+            "route": "Pending",
+            "status": "opend",
+            "alert_sent": "false",
+            "draft_response": "pending"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "customer_name",
+              "displayName": "customer_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "location",
+              "displayName": "location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "complaint",
+              "displayName": "complaint",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sentiment_score",
+              "displayName": "sentiment_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "severity",
+              "displayName": "severity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "confidence",
+              "displayName": "confidence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reasoning",
+              "displayName": "reasoning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "is_repeat_negative",
+              "displayName": "is_repeat_negative",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "route",
+              "displayName": "route",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "draft_response",
+              "displayName": "draft_response",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "alert_sent",
+              "displayName": "alert_sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -192,
+        -32
+      ],
+      "id": "9165c4c3-267c-4531-88a1-16422e65ac32",
+      "name": "Master Feedback",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "BtGFegRHJl07ZK7W",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "azodehazuka@gmail.com, greatyinkus1@yahoo.com",
+        "subject": "📊 ACCESS NOW: Live Customer Feedback Dashboard - Drivecare",
+        "emailType": "text",
+        "message": "=Dear Management & Sales/Marketing Team,\n\nWe are pleased to provide you with access to our real-time Customer Feedback Management Dashboard.\n\nACCESS THE DASHBOARD HERE:\nhttps://datastudio.google.com/reporting/a6d11eb6-788b-4504-af28-255a430d7e1f\n\nWHAT'S INSIDE:\n✅ Live customer feedback stream\n✅ Sentiment analysis and trends\n✅ Location-based filtering\n✅ Priority alerts for urgent complaints\n✅ Ready-to-post positive reviews for marketing\n✅ Response tracking and resolution status\n\nFOR MANAGEMENT:\n- Monitor unresolved critical alerts\n- Review complaints requiring immediate attention\n- Track customer satisfaction trends\n\nFOR SALES/MARKETING:\n- Find positive reviews for social media and Google/Yelp\n- Identify brand advocates\n- Monitor sentiment trends\n\nThe dashboard updates automatically as new feedback is received.\n\nBest regards,\nDrivecare Automated Feedback System",
+        "options": {
+          "appendAttribution": false,
+          "ccList": "babstephe778@gmail.com, atabo.ujohn@gmail.com,  hyacinthgabriel123@gmail.com, igweemmanuel98@gmail.com, osanyintuyimofeoluwa@gmail.com, daborjerry02@gmail.com, iwobiifeanyi@gmail.com"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1392,
+        -32
+      ],
+      "id": "896d8c2c-ee45-4734-bb9b-0a7342ed55c1",
+      "name": "Send a message2",
+      "webhookId": "0738028f-08f3-4b84-a1c0-bea2070522df",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "if6qYvsz8Nfgv1FD",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "confidence gate": {
+      "main": [
+        [
+          {
+            "node": "Log need human",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HistoryCheck",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "parse the AI output": {
+      "main": [
+        [
+          {
+            "node": "confidence gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "sentiment & severity scoring": {
+      "main": [
+        [
+          {
+            "node": "parse the AI output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "guard against empty/junk submissions": {
+      "main": [
+        [
+          {
+            "node": "sentiment & severity scoring",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Discarded Feedback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "node — normalize": {
+      "main": [
+        [
+          {
+            "node": "guard against empty/junk submissions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook/changes the flow from the webpage": {
+      "main": [
+        [
+          {
+            "node": "node — normalize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log need human": {
+      "main": [
+        [
+          {
+            "node": "Human review notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Master Feedback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Log positive",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "OpenAI - Severe/Repeat Draft",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI - Severe/Repeat Draft": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Log manager alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Log private queue/draft response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HistoryCheck": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message in Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "OpenAI - Severe/Repeat Draft",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Master Feedback": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log manager alert": {
+      "main": [
+        [
+          {
+            "node": "Send a message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log positive": {
+      "main": [
+        []
+      ]
+    },
+    "Human review notification": {
+      "main": [
+        []
+      ]
+    },
+    "Log private queue/draft response": {
+      "main": [
+        []
+      ]
+    },
+    "Log Discarded Feedback": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "86b15583-fbe9-4dbc-9891-447a5a41eb65",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4e9776dee878b7c192e46042857d7294b4525867dc292bbffca1465dea5bfa25"
+  },
+  "nodeGroups": [],
+  "id": "i8z1TOoXqsoD68AA",
+  "tags": []
+}
